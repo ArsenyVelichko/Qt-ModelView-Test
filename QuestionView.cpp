@@ -7,6 +7,7 @@
 #include <QMimeData>
 #include <QGuiApplication>
 #include <QClipboard>
+#include <QFileInfo>
 
 QuestionView::QuestionView(QWidget *parent)
     : QScrollArea(parent) {
@@ -67,8 +68,8 @@ void QuestionView::insertImage() {
 bool QuestionView::setupImage(const QMimeData *mimeData) {
     if (!mimeData->hasUrls()) { return false; }
 
-    QString pixmapPath = mimeData->urls()[0].toLocalFile();
-    QPixmap pixmap(pixmapPath);
+    QUrl url = mimeData->urls()[0];
+    QPixmap pixmap(url.toLocalFile());
     if (pixmap.isNull()) { return false; }
 
     QModelIndex curr = mSelectionModel->currentIndex();
@@ -77,6 +78,14 @@ bool QuestionView::setupImage(const QMimeData *mimeData) {
     mModel->setData(curr, pixmap, Qt::UserRole);
     mImageLabel->setPixmap(pixmap);
     mImageLabel->resize(pixmap.size());
+
+    QString question = mModel->data(curr, Qt::DisplayRole).value<QString>();
+    if (question.isEmpty()) {
+        QString fileName = url.fileName();
+        QString baseName = QFileInfo(fileName).baseName();
+        mModel->setData(curr, baseName, Qt::EditRole);
+    }
+
     return true;
 }
 
