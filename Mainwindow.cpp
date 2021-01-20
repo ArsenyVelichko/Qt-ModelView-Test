@@ -8,6 +8,7 @@
 #include <QKeyEvent>
 #include <QAction>
 #include <QMenuBar>
+#include <QFileDialog>
 #include "Mainwindow.h"
 #include "QuestionModel.h"
 
@@ -41,17 +42,27 @@ void MainWindow::setupWidgets() {
 }
 
 void MainWindow::setupActions() {
-    QMenu *fileMenu = new QMenu(tr("&File"), this);
+    QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
+
+    QAction *saveToPdfAction = new QAction(tr("Save to &PDF"));
+    connect(saveToPdfAction, &QAction::triggered, this, &MainWindow::saveToPdf);
+    fileMenu->addAction(saveToPdfAction);
 
     QAction *deleteAction = new QAction();
     deleteAction->setShortcut(QKeySequence::Delete);
-
     connect(deleteAction, &QAction::triggered, mQuestionView, &QuestionView::deleteCurrent);
     addAction(deleteAction);
 
     QAction *insertAction = new QAction();
     insertAction->setShortcut(QKeySequence::Paste);
-
     connect(insertAction, &QAction::triggered, mQuestionView, &QuestionView::insertImage);
     addAction(insertAction);
+}
+
+void MainWindow::saveToPdf() {
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
+                                                    "/home",tr("(*.pdf)"));
+    if (!fileName.isNull()) {
+        mModel->writeToPdf(fileName);
+    }
 }

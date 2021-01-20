@@ -24,7 +24,7 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 
     void addQuestion();
-    bool write(const QString &filePath);
+    void writeToPdf(const QString &pdfFilePath);
 
 private:
     QList<QString> mQuestions;

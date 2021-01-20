@@ -14,6 +14,10 @@ class MainWindow : public QMainWindow {
 public:
     explicit MainWindow(QWidget *parent = nullptr);
 
+
+public slots:
+    void saveToPdf();
+
 private:
     void setupWidgets();
     void setupActions();

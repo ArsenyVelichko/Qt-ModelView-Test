@@ -8,6 +8,8 @@
 #include <QUrl>
 #include <QFile>
 #include <QImageWriter>
+#include <QPdfWriter>
+#include <QPainter>
 
 QuestionModel::QuestionModel(QObject *parent) : QAbstractListModel(parent) {
     addQuestion();
@@ -94,20 +96,17 @@ bool QuestionModel::removeRows(int position, int rows, const QModelIndex &parent
     return true;
 }
 
-bool QuestionModel::write(const QString &filePath) {
-    QFile file(filePath);
-    if (!file.open(QIODevice::WriteOnly)) return false;
+void QuestionModel::writeToPdf(const QString &pdfFilePath) {
+    QPdfWriter writer(pdfFilePath);
+    QPainter painter(&writer);
 
-    QTextStream textStream(&file);
-    QImageWriter imageWriter(&file, "jpg");
+    int lastRow = mQuestions.size() - 1;
+    for (int i = 0; i < lastRow; i++) {
+        QPixmap pixmap = mPixmaps[i].scaledToWidth(writer.width(), Qt::SmoothTransformation);
+        painter.drawPixmap(0, 0, pixmap);
 
-    for (int i = 0; i < mQuestions.size() - 1; i++) {
-        textStream << mQuestions.at(i);
-
-        QImage image = mPixmaps.at(i).toImage();
-        if (!imageWriter.write(image)) {
-            return false;
+        if (i < lastRow - 1) {
+            writer.newPage();
         }
     }
-    return true;
 }
