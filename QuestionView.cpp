@@ -20,9 +20,18 @@ QuestionView::QuestionView(QWidget *parent)
     mSelectionModel = nullptr;
 }
 
+static bool isImageUrl(const QUrl &url) {
+    QString localPath = url.toLocalFile();
+    QRegExp imageFormats("(.jpeg|.jpg|.png)");
+    if (localPath.contains(imageFormats)) {
+        return true;
+    }
+    return false;
+}
 
 void QuestionView::dragEnterEvent(QDragEnterEvent *event) {
-    if (event->mimeData()->hasUrls()) {
+    auto *mimeData = event->mimeData();
+    if (mimeData->hasUrls() && isImageUrl(mimeData->urls()[0])) {
         event->acceptProposedAction();
     } else {
         event->ignore();
@@ -30,8 +39,9 @@ void QuestionView::dragEnterEvent(QDragEnterEvent *event) {
 }
 
 void QuestionView::dropEvent(QDropEvent *event) {
-    if (!event->mimeData()->hasUrls()) { return; }
-    if (setupImage(event->mimeData())) {
+    auto *mimeData = event->mimeData();
+    if (!mimeData->hasUrls()) { return; }
+    if (setupImage(mimeData)) {
         event->acceptProposedAction();
     }
 }
