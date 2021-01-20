@@ -14,7 +14,7 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setFixedSize(1280, 720);
     setupWidgets();
-    setupMenus();
+    setupActions();
 }
 
 void MainWindow::setupWidgets() {
@@ -22,45 +22,36 @@ void MainWindow::setupWidgets() {
     auto* layout = new QHBoxLayout(frame);
     mModel = new QuestionModel(this);
 
+    auto *selectionModel = new QItemSelectionModel(mModel);
+
     mQuestionList = new QListView;
     mQuestionList->setModel(mModel);
+    mQuestionList->setSelectionModel(selectionModel);
     mQuestionList->setFixedWidth(200);
     mQuestionList->setEditTriggers(QAbstractItemView::DoubleClicked);
 
-    mQuestionView = new QuestionView(mModel);
+    mQuestionView = new QuestionView;
+    mQuestionView->setModel(mModel);
+    mQuestionView->setSelectionModel(selectionModel);
     mQuestionView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    connect(mQuestionList->selectionModel(), &QItemSelectionModel::currentChanged,
-            mQuestionView, &QuestionView::onCurrItemChange);
 
     layout->addWidget(mQuestionList);
     layout->addWidget(mQuestionView);
     setCentralWidget(frame);
 }
 
-void MainWindow::keyPressEvent(QKeyEvent *event) {
-    switch (event->key()) {
-        case Qt::Key_Delete: {
-            QModelIndex curr = mQuestionList->currentIndex();
-            if (curr.isValid()) {
-                mModel->removeRow(curr.row());
-            }
-            break;
-        }
-        default:
-            break;
-    }
-}
-
-void MainWindow::setupMenus() {
+void MainWindow::setupActions() {
     QMenu *fileMenu = new QMenu(tr("&File"), this);
 
-    QAction *saveAction = fileMenu->addAction(tr("&Save As..."));
-    saveAction->setShortcuts(QKeySequence::SaveAs);
+    QAction *deleteAction = new QAction();
+    deleteAction->setShortcut(QKeySequence::Delete);
 
-    connect(saveAction, &QAction::triggered, this, &MainWindow::save);
-    menuBar()->addMenu(fileMenu);
-}
+    connect(deleteAction, &QAction::triggered, mQuestionView, &QuestionView::deleteCurrent);
+    addAction(deleteAction);
 
-void MainWindow::save() {
-    mModel->write("out.txt");
+    QAction *insertAction = new QAction();
+    insertAction->setShortcut(QKeySequence::Paste);
+
+    connect(insertAction, &QAction::triggered, mQuestionView, &QuestionView::insertImage);
+    addAction(insertAction);
 }

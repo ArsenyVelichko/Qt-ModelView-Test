@@ -14,15 +14,9 @@ class MainWindow : public QMainWindow {
 public:
     explicit MainWindow(QWidget *parent = nullptr);
 
-public slots:
-    void save();
-
-protected:
-    void keyPressEvent(QKeyEvent *event) override;
-
 private:
     void setupWidgets();
-    void setupMenus();
+    void setupActions();
 
     QuestionModel* mModel;
     QuestionView* mQuestionView;

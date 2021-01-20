@@ -7,24 +7,34 @@
 
 #include <QScrollArea>
 #include <QLabel>
+#include <QItemSelectionModel>
 #include "QuestionModel.h"
 
 class QuestionView : public QScrollArea {
     Q_OBJECT
 public:
-    QuestionView(QuestionModel *model, QWidget *parent = nullptr);
+    explicit QuestionView(QWidget *parent = nullptr);
+
+    void setModel(QuestionModel *model);
+    void setSelectionModel(QItemSelectionModel *selectionModel);
 
 public slots:
-    void onCurrItemChange(const QModelIndex &current, const QModelIndex &previous);
+    void deleteCurrent();
+    void insertImage();
 
 protected:
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dropEvent(QDropEvent *event) override;
 
 private:
+    bool setupImage(const QMimeData *mimeData);
+
     QLabel *mImageLabel;
     QuestionModel *mModel;
-    QModelIndex mCurrentIndex;
+    QItemSelectionModel *mSelectionModel;
+
+private slots:
+    void onCurrItemChange(const QModelIndex &current, const QModelIndex &previous);
 };
 
 #endif //QTTEST_QUESTIONVIEW_H

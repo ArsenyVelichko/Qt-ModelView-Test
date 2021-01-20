@@ -5,15 +5,19 @@
 #include "QuestionView.h"
 #include <QDragEnterEvent>
 #include <QMimeData>
+#include <QGuiApplication>
+#include <QClipboard>
 
-
-QuestionView::QuestionView(QuestionModel *model, QWidget *parent)
-    : mModel(model), QScrollArea(parent) {
+QuestionView::QuestionView(QWidget *parent)
+    : QScrollArea(parent) {
     setAcceptDrops(true);
     setAlignment(Qt::AlignCenter);
 
     mImageLabel = new QLabel;
     setWidget(mImageLabel);
+
+    mModel = nullptr;
+    mSelectionModel = nullptr;
 }
 
 
@@ -27,18 +31,55 @@ void QuestionView::dragEnterEvent(QDragEnterEvent *event) {
 
 void QuestionView::dropEvent(QDropEvent *event) {
     if (!event->mimeData()->hasUrls()) { return; }
-
-    QString pixmapPath = event->mimeData()->urls()[0].toLocalFile();
-    QPixmap pixmap(pixmapPath);
-    mModel->setData(mCurrentIndex, pixmap, Qt::UserRole);
-    mImageLabel->setPixmap(pixmap);
-    mImageLabel->resize(pixmap.size());
-    event->acceptProposedAction();
+    if (setupImage(event->mimeData())) {
+        event->acceptProposedAction();
+    }
 }
 
 void QuestionView::onCurrItemChange(const QModelIndex &current, const QModelIndex &previous) {
-    mCurrentIndex = current;
     QPixmap pixmap = mModel->data(current, Qt::UserRole).value<QPixmap>();
     mImageLabel->setPixmap(pixmap);
     mImageLabel->resize(pixmap.size());
+}
+
+void QuestionView::deleteCurrent() {
+    QModelIndex curr = mSelectionModel->currentIndex();
+    if (curr.isValid()) {
+        mModel->removeRow(curr.row());
+    }
+}
+
+void QuestionView::insertImage() {
+    auto *clipboard = QGuiApplication::clipboard();
+    setupImage(clipboard->mimeData());
+}
+
+bool QuestionView::setupImage(const QMimeData *mimeData) {
+    if (!mimeData->hasUrls()) { return false; }
+
+    QString pixmapPath = mimeData->urls()[0].toLocalFile();
+    QPixmap pixmap(pixmapPath);
+    if (pixmap.isNull()) { return false; }
+
+    QModelIndex curr = mSelectionModel->currentIndex();
+    if (!curr.isValid()) { return false; }
+
+    mModel->setData(curr, pixmap, Qt::UserRole);
+    mImageLabel->setPixmap(pixmap);
+    mImageLabel->resize(pixmap.size());
+    return true;
+}
+
+void QuestionView::setModel(QuestionModel *model) {
+    mModel = model;
+}
+
+void QuestionView::setSelectionModel(QItemSelectionModel *selectionModel) {
+    if (mSelectionModel) {
+        disconnect(mSelectionModel, &QItemSelectionModel::currentChanged,
+                   this, &QuestionView::onCurrItemChange);
+    }
+    mSelectionModel = selectionModel;
+    connect(mSelectionModel, &QItemSelectionModel::currentChanged,
+               this, &QuestionView::onCurrItemChange);
 }
