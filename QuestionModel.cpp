@@ -54,6 +54,10 @@ bool QuestionModel::setData(const QModelIndex &index, const QVariant &value, int
 
         case Qt::UserRole:
             mPixmaps[index.row()] = value.value<QPixmap>();
+
+            if (index.row() == mQuestions.size() - 1)
+                addQuestion();
+
             emit dataChanged(index, index, {Qt::UserRole});
             break;
 
