@@ -1,44 +1,52 @@
 //
-// Created by arseny on 06.01.2021.
+// Created by awesyr on 21.01.2021.
 //
 
 // You may need to build the project (run Qt uic code generator) to get "ui_MainWindow.h" resolved
 
-#include <QHBoxLayout>
-#include <QKeyEvent>
+#include <QSplitter>
 #include <QAction>
 #include <QMenuBar>
 #include <QFileDialog>
-#include "Mainwindow.h"
-#include "QuestionModel.h"
+#include <QGridLayout>
+#include "MainWindow.h"
+#include "ui_MainWindow.h"
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
-    setFixedSize(1280, 720);
+MainWindow::MainWindow(QWidget *parent) :
+        QMainWindow(parent), ui(new Ui::MainWindow) {
+    ui->setupUi(this);
+    setGeometry(0, 0, 1280, 720);
     setupWidgets();
     setupActions();
 }
 
 void MainWindow::setupWidgets() {
-    auto* frame = new QFrame;
-    auto* layout = new QHBoxLayout(frame);
     mModel = new QuestionModel(this);
-
     auto *selectionModel = new QItemSelectionModel(mModel);
 
     mQuestionList = new QListView;
     mQuestionList->setModel(mModel);
     mQuestionList->setSelectionModel(selectionModel);
-    mQuestionList->setFixedWidth(200);
     mQuestionList->setEditTriggers(QAbstractItemView::DoubleClicked);
 
     mQuestionView = new QuestionView;
     mQuestionView->setModel(mModel);
     mQuestionView->setSelectionModel(selectionModel);
-    mQuestionView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    layout->addWidget(mQuestionList);
-    layout->addWidget(mQuestionView);
-    setCentralWidget(frame);
+    auto* splitter = new QSplitter;
+    splitter->addWidget(mQuestionList);
+    splitter->addWidget(mQuestionView);
+    splitter->setStretchFactor(1, 2);
+    splitter->setChildrenCollapsible(false);
+    splitter->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Expanding);
+
+    mProgressBar = new CircularProgressBar(100);
+    mProgressBar->setVisible(false);
+    connect(mModel, &QuestionModel::pixmapWritten, mProgressBar, &QProgressBar::setValue);
+
+    auto *gridLayout = new QGridLayout(centralWidget());
+    gridLayout->addWidget(splitter, 0, 0);
+    gridLayout->addWidget(mProgressBar, 0, 0,  Qt::AlignCenter);
 }
 
 void MainWindow::setupActions() {
@@ -63,6 +71,16 @@ void MainWindow::saveToPdf() {
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
                                                     "/home",tr("(*.pdf)"));
     if (!fileName.isNull()) {
+        mProgressBar->setMinimum(0);
+        mProgressBar->setMaximum(mModel->rowCount(QModelIndex()) - 1);
+        mProgressBar->reset();
+        mProgressBar->setVisible(true);
+
         mModel->writeToPdf(fileName);
+        mProgressBar->setVisible(false);
     }
+}
+
+MainWindow::~MainWindow() {
+    delete ui;
 }

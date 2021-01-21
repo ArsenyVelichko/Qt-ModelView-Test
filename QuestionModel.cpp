@@ -98,14 +98,27 @@ bool QuestionModel::removeRows(int position, int rows, const QModelIndex &parent
 
 void QuestionModel::writeToPdf(const QString &pdfFilePath) {
     QPdfWriter writer(pdfFilePath);
+    writer.setPageMargins(QMargins());
+
+    qreal writerWidth = writer.width();
+    qreal ppi = 72.0;
+    qreal scaling = ppi / writer.resolution();
+
+    QPixmap pixmap;
+    if (mQuestions.size() > 1) {
+        pixmap = mPixmaps[0].scaledToWidth(writerWidth, Qt::SmoothTransformation);
+        writer.setPageSize(QPageSize(pixmap.size() * scaling));
+    }
+
     QPainter painter(&writer);
 
-    int lastRow = mQuestions.size() - 1;
-    for (int i = 0; i < lastRow; i++) {
-        QPixmap pixmap = mPixmaps[i].scaledToWidth(writer.width(), Qt::SmoothTransformation);
+    for (int i = 1; i < mQuestions.size(); i++) {
         painter.drawPixmap(0, 0, pixmap);
+        emit pixmapWritten(i);
 
-        if (i < lastRow - 1) {
+        if (i < mQuestions.size() - 1) {
+            pixmap = mPixmaps[i].scaledToWidth(writerWidth, Qt::SmoothTransformation);
+            writer.setPageSize(QPageSize(pixmap.size() * scaling));
             writer.newPage();
         }
     }

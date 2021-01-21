@@ -8,6 +8,7 @@
 
 #include <QAbstractListModel>
 #include <QFile>
+#include <QProgressBar>
 
 class QuestionModel : public QAbstractListModel {
     Q_OBJECT
@@ -25,6 +26,9 @@ public:
 
     void addQuestion();
     void writeToPdf(const QString &pdfFilePath);
+
+signals:
+    void pixmapWritten(int index);
 
 private:
     QList<QString> mQuestions;
